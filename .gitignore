@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+
+# Virtual environment
+venv/
+.venv/
+env/
+
+# Data & logs
+logs/
+data/
+*.db
+*.jsonl
+agent.log
+
+# Screenshots
+.agent_screenshots/
+*agent_screenshot*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Config overrides
+config/local.yaml
+.env

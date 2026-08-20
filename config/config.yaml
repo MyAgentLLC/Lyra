@@ -1,0 +1,100 @@
+# Autonomous Agent Configuration
+
+# Model settings
+model:
+  name: "llama3.1"
+  temperature: 0.7
+  max_tokens: 4096
+  system_prompt: |
+    You are an autonomous AI agent running locally on the user's machine.
+    You can control the computer, phone, browser, and filesystem through tools.
+    You can receive incoming webhooks and emit outgoing webhooks.
+    You plan tasks step by step, use tools to accomplish them, and report results.
+    Always think before acting. Break complex tasks into smaller steps.
+    If you're unsure about a destructive action, ask for confirmation.
+
+# Command center
+server:
+  host: "127.0.0.1"
+  port: 8420
+
+# Safety settings
+safety:
+  require_confirmation:
+    - "shell_command"
+    - "file_delete"
+    - "file_write"
+    - "phone_app_install"
+    - "phone_factory_reset"
+    - "browser_execute_js"
+  blocked_commands:
+    - "rm -rf /"
+    - "mkfs"
+    - "dd if="
+    - "shutdown"
+    - "reboot"
+    - "halt"
+  max_autonomous_actions: 25
+  action_log: "logs/actions.jsonl"
+
+# Device control
+devices:
+  computer:
+    enabled: true
+    screen_scale: 1.0
+  
+  phone:
+    enabled: true
+    device_serial: ""
+    screenshot_quality: 80
+  
+  filesystem:
+    enabled: true
+    allowed_roots: []
+    blocked_paths:
+      - "/etc"
+      - "/var"
+      - "/usr"
+      - "/bin"
+      - "/sbin"
+      - "/boot"
+      - "/sys"
+      - "/proc"
+  
+  # Browser automation via Playwright
+  browser:
+    enabled: true
+    # Run browser in headless mode (no visible window)
+    headless: true
+    # Browser engine: chromium, firefox, webkit
+    browser_type: "chromium"
+    # Default timeout for page operations (ms)
+    timeout: 30000
+
+# Memory
+memory:
+  db_path: "data/memory.db"
+  max_context_turns: 20
+  max_tasks: 100
+
+# Agent behavior
+agent:
+  planning_depth: 5
+  auto_continue: true
+  action_delay: 0.5
+
+# Webhooks
+webhooks:
+  enabled: true
+  db_path: "data/webhooks.db"
+  # Incoming webhooks are accessible at /webhook/<name>
+  # Outgoing webhooks POST to external URLs on events
+
+# Plugin system
+plugins:
+  enabled: true
+  directory: "plugins"
+  # Plugin-specific config can be added under plugins.<name>
+  # Example:
+  #   example:
+  #     some_setting: "value"

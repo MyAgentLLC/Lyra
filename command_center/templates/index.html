@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Autonomous Agent — Command Center</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --bg: #0a0a0f;
+            --surface: #131318;
+            --surface-2: #1a1a22;
+            --border: #2a2a35;
+            --text: #e4e4e7;
+            --text-muted: #71717a;
+            --accent: #6366f1;
+            --accent-hover: #818cf8;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --danger-hover: #dc2626;
+            --info: #3b82f6;
+        }
+        
+        body {
+            font-family: 'SF Mono', 'Fira Code', 'JetBrains Mono', 'Cascadia Code', monospace;
+            background: var(--bg);
+            color: var(--text);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Header */
+        header {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+        
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .logo {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--accent);
+            letter-spacing: 0.5px;
+        }
+        
+        .logo::before {
+            content: "◈";
+            margin-right: 8px;
+            font-size: 22px;
+        }
+        
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--text-muted);
+        }
+        
+        .status-dot.idle { background: var(--text-muted); }
+        .status-dot.running { background: var(--success); animation: pulse 1.5s infinite; }
+        .status-dot.error { background: var(--danger); }
+        .status-dot.stopped { background: var(--warning); }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+        
+        .header-right {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--surface-2);
+            color: var(--text);
+            font-family: inherit;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        
+        .btn:hover {
+            background: var(--border);
+            border-color: var(--accent);
+        }
+        
+        .btn.danger {
+            background: var(--danger);
+            border-color: var(--danger);
+            color: white;
+        }
+        
+        .btn.danger:hover {
+            background: var(--danger-hover);
+        }
+        
+        .btn.primary {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+        
+        .btn.primary:hover {
+            background: var(--accent-hover);
+        }
+        
+        /* Main layout */
+        .main {
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            flex: 1;
+            overflow: hidden;
+        }
+        
+        /* Chat panel */
+        .chat-panel {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border-right: 1px solid var(--border);
+        }
+        
+        .chat-tabs {
+            display: flex;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+        
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 13px;
+            color: var(--text-muted);
+            border-bottom: 2px solid transparent;
+            transition: all 0.15s;
+        }
+        
+        .tab:hover { color: var(--text); }
+        .tab.active {
+            color: var(--accent);
+            border-bottom-color: var(--accent);
+        }
+        
+        .tab-content {
+            flex: 1;
+            overflow: hidden;
+            display: none;
+            flex-direction: column;
+        }
+        
+        .tab-content.active { display: flex; }
+        
+        /* Chat messages */
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        
+        .message {
+            max-width: 80%;
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-size: 14px;
+            line-height: 1.5;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        
+        .message.user {
+            align-self: flex-end;
+            background: var(--accent);
+            color: white;
+        }
+        
+        .message.assistant {
+            align-self: flex-start;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+        }
+        
+        .message.tool {
+            align-self: flex-start;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            font-size: 12px;
+            color: var(--text-muted);
+            max-width: 90%;
+        }
+        
+        .message.thinking {
+            align-self: flex-start;
+            background: transparent;
+            color: var(--text-muted);
+            font-style: italic;
+            font-size: 13px;
+            padding: 4px 16px;
+        }
+        
+        .message.error {
+            align-self: flex-start;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid var(--danger);
+            color: var(--danger);
+        }
+        
+        .message .tool-name {
+            color: var(--accent);
+            font-weight: 600;
+        }
+        
+        .message .tool-result {
+            margin-top: 4px;
+            font-family: inherit;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        /* Input area */
+        .input-area {
+            padding: 16px 20px;
+            border-top: 1px solid var(--border);
+            background: var(--surface);
+            flex-shrink: 0;
+        }
+        
+        .input-row {
+            display: flex;
+            gap: 8px;
+            align-items: flex-end;
+        }
+        
+        .input-row textarea {
+            flex: 1;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-family: inherit;
+            font-size: 14px;
+            padding: 12px;
+            resize: none;
+            min-height: 44px;
+            max-height: 200px;
+            transition: border-color 0.15s;
+        }
+        
+        .input-row textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+        
+        .input-options {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 8px;
+            font-size: 12px;
+            color: var(--text-muted);
+            align-items: center;
+        }
+        
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+        }
+        
+        /* Action log */
+        .action-log {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+        }
+        
+        .log-entry {
+            padding: 8px 12px;
+            margin-bottom: 4px;
+            border-radius: 6px;
+            font-size: 12px;
+            border-left: 3px solid var(--border);
+            background: var(--surface);
+        }
+        
+        .log-entry.tool_call { border-left-color: var(--info); }
+        .log-entry.tool_result { border-left-color: var(--success); }
+        .log-entry.thinking { border-left-color: var(--accent); }
+        .log-entry.error { border-left-color: var(--danger); }
+        .log-entry.response { border-left-color: var(--warning); }
+        .log-entry.confirmation_request { border-left-color: var(--warning); background: rgba(245, 158, 11, 0.05); }
+        
+        .log-entry .log-type {
+            font-size: 10px;
+            text-transform: uppercase;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+        
+        .log-entry .log-content {
+            color: var(--text);
+            font-family: inherit;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        
+        .log-entry .log-content pre {
+            background: var(--bg);
+            padding: 8px;
+            border-radius: 4px;
+            overflow-x: auto;
+            margin-top: 4px;
+        }
+        
+        /* Side panel */
+        .side-panel {
+            background: var(--surface);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .panel-section {
+            border-bottom: 1px solid var(--border);
+            padding: 16px;
+        }
+        
+        .panel-title {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+        
+        .stat-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        
+        .stat-card {
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px;
+        }
+        
+        .stat-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+        
+        .stat-value {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--accent);
+        }
+        
+        /* Tools list */
+        .tools-list {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        
+        .tool-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+        }
+        
+        .tool-category {
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 3px;
+            background: var(--border);
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .tool-name {
+            color: var(--text);
+            font-family: inherit;
+        }
+        
+        .tool-confirm {
+            margin-left: auto;
+            font-size: 10px;
+            color: var(--warning);
+        }
+        
+        /* Confirmation dialog */
+        .confirmation-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        
+        .confirmation-overlay.active { display: flex; }
+        
+        .confirmation-dialog {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            max-width: 500px;
+            width: 90%;
+        }
+        
+        .confirmation-dialog h3 {
+            color: var(--warning);
+            margin-bottom: 12px;
+            font-size: 16px;
+        }
+        
+        .confirmation-dialog .tool-detail {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px;
+            margin: 12px 0;
+            font-size: 13px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .confirmation-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 16px;
+            justify-content: flex-end;
+        }
+        
+        /* Task history */
+        .task-item {
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 10px;
+            margin-bottom: 6px;
+            cursor: pointer;
+            transition: border-color 0.15s;
+        }
+        
+        .task-item:hover { border-color: var(--accent); }
+        
+        .task-item .task-goal {
+            font-size: 13px;
+            margin-bottom: 4px;
+            color: var(--text);
+        }
+        
+        .task-item .task-status {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+        
+        .task-item .task-status.completed { color: var(--success); }
+        .task-item .task-status.error { color: var(--danger); }
+        .task-item .task-status.running { color: var(--info); }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg); }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .main { grid-template-columns: 1fr; }
+            .side-panel { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-left">
+            <div class="logo">AUTONOMOUS AGENT</div>
+            <div class="status-badge">
+                <div class="status-dot idle" id="statusDot"></div>
+                <span id="statusText">Idle</span>
+            </div>
+            <div class="status-badge">
+                <span style="color: var(--text-muted)">Model:</span>
+                <span id="modelText">—</span>
+            </div>
+        </div>
+        <div class="header-right">
+            <button class="btn" onclick="clearConversation()">Clear</button>
+            <button class="btn danger" id="stopBtn" onclick="emergencyStop()" style="display:none">Emergency Stop</button>
+        </div>
+    </header>
+    
+    <div class="main">
+        <!-- Chat / Action Log Panel -->
+        <div class="chat-panel">
+            <div class="chat-tabs">
+                <div class="tab active" data-tab="chat" onclick="switchTab('chat')">Chat</div>
+                <div class="tab" data-tab="log" onclick="switchTab('log')">Action Log</div>
+                <div class="tab" data-tab="tasks" onclick="switchTab('tasks')">Task History</div>
+            </div>
+            
+            <!-- Chat Tab -->
+            <div class="tab-content active" id="tab-chat">
+                <div class="messages" id="messages"></div>
+                <div class="input-area">
+                    <div class="input-options">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="autoConfirm" checked>
+                            Auto-confirm safe actions
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="radio" name="mode" value="task" checked> Autonomous Task
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="radio" name="mode" value="chat"> Simple Chat
+                        </label>
+                    </div>
+                    <div class="input-row">
+                        <textarea id="chatInput" placeholder="Enter a task or message... (Shift+Enter for new line)"
+                                  rows="1" onkeydown="handleInputKey(event)"></textarea>
+                        <button class="btn primary" onclick="sendInput()">Send</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Action Log Tab -->
+            <div class="tab-content" id="tab-log">
+                <div class="action-log" id="actionLog"></div>
+            </div>
+            
+            <!-- Tasks Tab -->
+            <div class="tab-content" id="tab-tasks">
+                <div class="action-log" id="taskList">
+                    <div style="color: var(--text-muted); padding: 20px; text-align: center;">
+                        No tasks yet. Send a goal to get started.
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Side Panel -->
+        <div class="side-panel">
+            <div class="panel-section">
+                <div class="panel-title">Status</div>
+                <div class="stat-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Steps</div>
+                        <div class="stat-value" id="statSteps">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Actions</div>
+                        <div class="stat-value" id="statActions">0</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="panel-section">
+                <div class="panel-title">Device Status</div>
+                <div id="deviceStatus" style="font-size: 12px; color: var(--text-muted);">
+                    Checking...
+                </div>
+            </div>
+            
+            <div class="panel-section">
+                <div class="panel-title">Available Tools</div>
+                <div class="tools-list" id="toolsList">
+                    Loading...
+                </div>
+            </div>
+            
+            <div class="panel-section">
+                <div class="panel-title">Stored Facts</div>
+                <div id="factsList" style="font-size: 12px;">
+                    No facts stored.
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Confirmation Dialog -->
+    <div class="confirmation-overlay" id="confirmOverlay">
+        <div class="confirmation-dialog">
+            <h3>⚠ Action Confirmation Required</h3>
+            <p style="color: var(--text-muted); font-size: 13px;">
+                The agent wants to perform an action that requires your approval.
+            </p>
+            <div class="tool-detail" id="confirmDetail"></div>
+            <div class="confirmation-actions">
+                <button class="btn" onclick="respondConfirmation(false)">Cancel</button>
+                <button class="btn primary" onclick="respondConfirmation(true)">Approve</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="/static/app.js"></script>
+</body>
+</html>

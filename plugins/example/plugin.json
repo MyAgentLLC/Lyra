@@ -1,0 +1,9 @@
+{
+    "name": "example",
+    "version": "1.0.0",
+    "description": "Example plugin showing how to build plugins for the Autonomous Agent.",
+    "author": "You",
+    "entry_point": "plugin.py",
+    "dependencies": [],
+    "config": {}
+}
