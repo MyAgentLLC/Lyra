@@ -1,39 +1,20 @@
-# Python
+# Ignore Python
 __pycache__/
-*.py[cod]
-*$py.class
+*.pyc
+*.pyo
 *.egg-info/
-dist/
-build/
-.eggs/
-*.egg
 
-# Virtual environment
-venv/
-.venv/
-env/
-
-# Data & logs
+# Data and logs
 logs/
 data/
+*.log
 *.db
-*.jsonl
-agent.log
-
-# Screenshots
 .agent_screenshots/
-*agent_screenshot*
+
+# Environment
+.env
+*.env
 
 # OS files
 .DS_Store
 Thumbs.db
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# Config overrides
-config/local.yaml
-.env

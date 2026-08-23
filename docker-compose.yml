@@ -1,0 +1,86 @@
+# docker-compose.yml — Autonomous Agent stack
+# Runs Ollama (local LLM) + the Agent (with Tailscale VPN access)
+#
+# Usage:
+#   TAILSCALE_AUTH_KEY=tskey-auth-xxxx docker compose up -d
+#
+# Then access the command center from any device on your Tailscale network:
+#   http://<agent-tailscale-hostname>:8420
+
+services:
+  # ── Ollama: Local LLM inference ──
+  ollama:
+    image: ollama/ollama:latest
+    container_name: lyra-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-models:/root/.ollama
+    # GPU support — uncomment if you have an NVIDIA GPU
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Model puller: One-shot to pull your model ──
+  ollama-puller:
+    image: ollama/ollama:latest
+    container_name: lyra-puller
+    depends_on:
+      ollama:
+        condition: service_healthy
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+    entrypoint: ["sh", "-c"]
+    command: >
+      "ollama pull qwen2.5:7b && echo 'Model pulled successfully'"
+    restart: "no"
+
+  # ── The Agent: Command center + browser + tools + Tailscale ──
+  agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: lyra-agent
+    depends_on:
+      ollama:
+        condition: service_healthy
+    ports:
+      - "8420:8420"
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+      # Tailscale auth key — get from https://login.tailscale.com/admin/settings/keys
+      - TAILSCALE_AUTH_KEY=${TAILSCALE_AUTH_KEY:-}
+      # Tailscale hostname for this node on your tailnet
+      - TAILSCALE_HOSTNAME=${TAILSCALE_HOSTNAME:-lyra-agent}
+      # Accept incoming Tailscale connections
+      - TAILSCALE_ACCEPT_DNS=true
+    volumes:
+      - agent-data:/app/data
+      - agent-logs:/app/logs
+      - agent-screenshots:/root/.agent_screenshots
+      # Mount your home directory for filesystem access (optional)
+      # - /home/youruser:/host-home:ro
+    # Tailscale needs these capabilities
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    # For USB/ADB phone access (optional — requires host ADB server)
+    # network_mode: host
+    restart: unless-stopped
+
+volumes:
+  ollama-models:
+  agent-data:
+  agent-logs:
+  agent-screenshots:
