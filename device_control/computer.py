@@ -2,20 +2,35 @@
 Computer control module — mouse, keyboard, screenshots, and shell commands.
 """
 
-import pyautogui
 import subprocess
 import platform
 import time
 import os
 import logging
-from pathlib import Path
-from PIL import Image
+
+# pyautogui is only available on desktop (X11/macOS/Windows).
+# On Android/Termux it cannot be installed — guard the import so the
+# rest of the module (shell commands, system info, directory listing)
+# still works on headless/mobile environments.
+try:
+    import pyautogui
+    pyautogui.FAILSAFE = True
+    pyautogui.PAUSE = 0.1
+    PYAUTOGUI_AVAILABLE = True
+except Exception:
+    PYAUTOGUI_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
 
-# Safety: pyautogui failsafe
-pyautogui.FAILSAFE = True
-pyautogui.PAUSE = 0.1
+
+def _require_pyautogui():
+    if not PYAUTOGUI_AVAILABLE:
+        raise RuntimeError(
+            "pyautogui is not available on this platform "
+            "(no desktop display / not installed). "
+            "Enable the desktop environment or use a config where "
+            "devices.computer.gui is disabled."
+        )
 
 
 class ComputerControl:
@@ -32,6 +47,9 @@ class ComputerControl:
     
     def screenshot(self, save_path: str = None) -> dict:
         """Take a screenshot."""
+
+        if not PYAUTOGUI_AVAILABLE:
+            return {"error": "pyautogui unavailable on this platform (no desktop display). GUI control is disabled."}
         try:
             screenshot = pyautogui.screenshot()
             if save_path:
@@ -47,6 +65,9 @@ class ComputerControl:
 
     def get_screen_size(self) -> dict:
         """Get screen dimensions."""
+
+        if not PYAUTOGUI_AVAILABLE:
+            return {"error": "pyautogui unavailable on this platform (no desktop display). GUI control is disabled."}
         try:
             w, h = pyautogui.size()
             return {"width": w, "height": h}
@@ -57,6 +78,9 @@ class ComputerControl:
     
     def mouse_move(self, x: int, y: int) -> dict:
         """Move mouse to coordinates."""
+
+        if not PYAUTOGUI_AVAILABLE:
+            return {"error": "pyautogui unavailable on this platform (no desktop display). GUI control is disabled."}
         try:
             x, y = self._scale_coords(x, y)
             pyautogui.moveTo(x, y, duration=0.3)
@@ -67,6 +91,9 @@ class ComputerControl:
     def mouse_click(self, x: int = None, y: int = None, button: str = "left",
                      clicks: int = 1, duration: float = 0.3) -> dict:
         """Click the mouse at coordinates or current position."""
+
+        if not PYAUTOGUI_AVAILABLE:
+            return {"error": "pyautogui unavailable on this platform (no desktop display). GUI control is disabled."}
         try:
             if x is not None and y is not None:
                 x, y = self._scale_coords(x, y)
@@ -79,14 +106,23 @@ class ComputerControl:
 
     def mouse_right_click(self, x: int = None, y: int = None) -> dict:
         """Right-click the mouse."""
+
+        if not PYAUTOGUI_AVAILABLE:
+            return {"error": "pyautogui unavailable on this platform (no desktop display). GUI control is disabled."}
         return self.mouse_click(x=x, y=y, button="right")
 
     def mouse_double_click(self, x: int = None, y: int = None) -> dict:
         """Double-click the mouse."""
+
+        if not PYAUTOGUI_AVAILABLE:
+            return {"error": "pyautogui unavailable on this platform (no desktop display). GUI control is disabled."}
         return self.mouse_click(x=x, y=y, clicks=2)
 
     def mouse_drag(self, x1: int, y1: int, x2: int, y2: int, duration: float = 0.5) -> dict:
         """Drag from one point to another."""
+
+        if not PYAUTOGUI_AVAILABLE:
+            return {"error": "pyautogui unavailable on this platform (no desktop display). GUI control is disabled."}
         try:
             x1, y1 = self._scale_coords(x1, y1)
             x2, y2 = self._scale_coords(x2, y2)
@@ -98,6 +134,9 @@ class ComputerControl:
 
     def mouse_scroll(self, clicks: int = 3, x: int = None, y: int = None) -> dict:
         """Scroll the mouse wheel."""
+
+        if not PYAUTOGUI_AVAILABLE:
+            return {"error": "pyautogui unavailable on this platform (no desktop display). GUI control is disabled."}
         try:
             if x is not None and y is not None:
                 x, y = self._scale_coords(x, y)
@@ -111,6 +150,9 @@ class ComputerControl:
     
     def key_type(self, text: str, interval: float = 0.05) -> dict:
         """Type a string of text."""
+
+        if not PYAUTOGUI_AVAILABLE:
+            return {"error": "pyautogui unavailable on this platform (no desktop display). GUI control is disabled."}
         try:
             pyautogui.typewrite(text, interval=interval)
             return {"status": "success", "text": text}
@@ -119,6 +161,9 @@ class ComputerControl:
 
     def key_press(self, key: str, presses: int = 1) -> dict:
         """Press a single key or key combination."""
+
+        if not PYAUTOGUI_AVAILABLE:
+            return {"error": "pyautogui unavailable on this platform (no desktop display). GUI control is disabled."}
         try:
             # Support combinations like "ctrl+c", "alt+tab"
             if "+" in key:
@@ -132,6 +177,9 @@ class ComputerControl:
 
     def key_hotkey(self, *keys) -> dict:
         """Press a key combination."""
+
+        if not PYAUTOGUI_AVAILABLE:
+            return {"error": "pyautogui unavailable on this platform (no desktop display). GUI control is disabled."}
         try:
             pyautogui.hotkey(*keys)
             return {"status": "success", "keys": list(keys)}

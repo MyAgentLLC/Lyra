@@ -26,6 +26,15 @@ logger = logging.getLogger(__name__)
 
 def load_config(config_path: str = None) -> dict:
     if not config_path:
+        # Allow: python3 run.py --config config/config.mobile.yaml
+        #   or:  CONFIG=config/mobile.yaml python3 run.py
+        config_path = os.environ.get("LYRA_CONFIG")
+        if not config_path:
+            for i, arg in enumerate(sys.argv):
+                if arg == "--config" and i + 1 < len(sys.argv):
+                    config_path = sys.argv[i + 1]
+                    break
+    if not config_path:
         config_path = os.path.join(PROJECT_DIR, "config", "config.yaml")
     
     if not os.path.exists(config_path):

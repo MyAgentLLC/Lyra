@@ -1,0 +1,80 @@
+# Lyra Mobile Configuration — Android / Termux
+# Use with: python3 run.py --config config/config.mobile.yaml
+
+model:
+  name: "qwen2.5:1.5b"
+  temperature: 0.7
+  max_tokens: 2048
+  system_prompt: |
+    You are Lyra, an autonomous AI agent running locally on the user's Android phone.
+    You can run shell commands on the phone (Termux), read and write files,
+    search the filesystem, and manage tasks and memory.
+    You plan tasks step by step, use tools to accomplish them, and report results.
+    If you're unsure about a destructive action, ask for confirmation.
+
+server:
+  # localhost only — access the command center from the phone's own browser
+  host: "127.0.0.1"
+  port: 8420
+
+safety:
+  require_confirmation:
+    - "shell_command"
+    - "file_delete"
+    - "file_write"
+    - "browser_execute_js"
+  blocked_commands:
+    - "rm -rf /"
+    - "rm -rf ~"
+    - "mkfs"
+    - "dd if="
+    - "reboot"
+    - "am force-stop com.termux"
+    - "pkg uninstall"
+  max_autonomous_actions: 25
+  action_log: "logs/actions.jsonl"
+
+devices:
+  # Desktop GUI control — not available on Android (pyautogui needs a display).
+  # Shell/system tools still work; GUI calls return a clear error.
+  computer:
+    enabled: true
+
+  # Self-control: the agent can drive THIS phone via wireless ADB (optional).
+  # Enable wireless debugging in developer options, then:
+  #   adb connect 127.0.0.1:<port shown in wireless debugging>
+  phone:
+    enabled: true
+    device_serial: ""
+    screenshot_quality: 60
+
+  filesystem:
+    enabled: true
+    allowed_roots: []
+    blocked_paths:
+      - "/proc"
+      - "/sys"
+      - "/system"
+      - "/vendor"
+
+  # Playwright browsers cannot run on Android/Termux — keep disabled.
+  browser:
+    enabled: false
+
+memory:
+  db_path: "data/memory.db"
+  max_context_turns: 12
+  max_tasks: 50
+
+agent:
+  planning_depth: 5
+  auto_continue: true
+  action_delay: 0.5
+
+webhooks:
+  enabled: true
+  db_path: "data/webhooks.db"
+
+plugins:
+  enabled: true
+  directory: "plugins"
