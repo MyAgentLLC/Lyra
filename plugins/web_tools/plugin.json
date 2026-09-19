@@ -1,0 +1,9 @@
+{
+    "name": "web_tools",
+    "version": "1.0.0",
+    "description": "Web skills — fetch URLs, download files, and search DuckDuckGo. Only makes network calls when the user asks for it.",
+    "author": "Lyra",
+    "entry_point": "plugin.py",
+    "dependencies": [],
+    "config": {}
+}

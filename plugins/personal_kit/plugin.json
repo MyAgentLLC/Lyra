@@ -1,0 +1,9 @@
+{
+    "name": "personal_kit",
+    "version": "1.0.0",
+    "description": "Productivity skills — calculator, notes, reminders, and todo list.",
+    "author": "Lyra",
+    "entry_point": "plugin.py",
+    "dependencies": [],
+    "config": {}
+}

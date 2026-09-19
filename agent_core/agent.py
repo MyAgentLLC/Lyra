@@ -11,8 +11,8 @@ from typing import Optional, Callable
 
 from .llm import LLMInterface
 from .memory import AgentMemory
-from ..tools.tool_registry import ToolRegistry
-from ..utils.safety import SafetyChecker
+from tools.tool_registry import ToolRegistry
+from utils.safety import SafetyChecker
 
 logger = logging.getLogger(__name__)
 

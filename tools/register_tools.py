@@ -5,11 +5,11 @@ Includes computer, phone, filesystem, browser, and plugin tools.
 
 import json
 import asyncio
-from ..tools.tool_registry import Tool, ToolRegistry
-from ..device_control.computer import ComputerControl
-from ..device_control.phone import PhoneControl
-from ..device_control.filesystem import FilesystemControl
-from ..device_control.browser import BrowserControl
+from tools.tool_registry import Tool, ToolRegistry
+from device_control.computer import ComputerControl
+from device_control.phone import PhoneControl
+from device_control.filesystem import FilesystemControl
+from device_control.browser import BrowserControl
 
 
 def build_tool_registry(config: dict) -> ToolRegistry:

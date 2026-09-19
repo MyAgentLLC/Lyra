@@ -199,7 +199,7 @@ def create_app(agent, tools_registry, memory, config: dict,
     
     @app.get("/api/phone/status")
     async def phone_status():
-        from ..device_control.phone import PhoneControl
+        from device_control.phone import PhoneControl
         phone_config = config.get("devices", {}).get("phone", {})
         phone = PhoneControl(device_serial=phone_config.get("device_serial", ""))
         return phone.check_connection()

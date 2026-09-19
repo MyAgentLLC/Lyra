@@ -254,7 +254,10 @@ class PluginAPI:
                       handler: Callable, requires_confirmation: bool = False,
                       category: str = "plugin"):
         """Register a tool with the tool registry."""
-        from ..tools.tool_registry import Tool
+        # Absolute import — plugin modules load via importlib without a
+        # package context, so a relative import here breaks plugin loading.
+        # (PROJECT_DIR is on sys.path via run.py.)
+        from tools.tool_registry import Tool
         
         full_name = f"plugin_{self.manifest.name}_{name}"
         tool = Tool(

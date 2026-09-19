@@ -17,6 +17,9 @@ Tested target: Samsung Galaxy S26 Ultra (Snapragon 8 Gen 4, 12–16 GB RAM). Wor
 | Plugins | ✅ | Same plugin system |
 | Desktop GUI control (pyautogui) | ❌ | No display server on Android — calls return a clear error, agent keeps working |
 | Browser automation (Playwright) | ❌ | Chromium can't run inside Termux — disabled in mobile config |
+| **Phone-native skills (Termux:API)** | ✅ | Notifications, TTS voice, clipboard, battery, location, flashlight, volume, wifi |
+| **Web skills** | ✅ | web_search (DDG→Bing fallback), fetch_url, download_file |
+| **Personal kit** | ✅ | Calculator, notes, reminders, todos — stored locally in data/personal/ |
 
 For full computer + browser control, run Lyra on your laptop and access it from the phone over Tailscale (see [DEPLOY.md](DEPLOY.md)).
 
@@ -108,6 +111,27 @@ adb devices                            # should list the phone
 The wireless-debugging port changes on reboot; re-run `adb connect` if tools report no device.
 
 ---
+
+## Lyra's skill set (v2.1)
+
+Lyra ships with three skill plugins (auto-loaded from `plugins/`):
+
+| Plugin | Skills |
+|---|---|
+| `phone_native` | phone_notify, phone_speak (TTS), clipboard get/set, battery, location, flashlight, volume, wifi info, device info |
+| `web_tools` | web_search (DuckDuckGo with Bing fallback), fetch_url, download_file |
+| `personal_kit` | calculator, notes (add/read/list), reminders (add/list/done), todos (add/list/done) |
+
+Phone-native skills need one extra piece (already installed by `termux-setup.sh`):
+the **Termux:API app** from F-Droid — `pkg install termux-api` handles the CLI side.
+Install the companion app from https://f-droid.org/packages/com.termux.api/ and grant
+the notification permission on first use.
+
+Skills only make network calls when you ask for something that needs them
+(fetch a page, search the web). Nothing phones home on its own.
+
+Adding more skills: drop a folder in `plugins/` with a `plugin.json` and `plugin.py`
+— see `plugins/example/` for the template.
 
 ## Model notes
 

@@ -1,0 +1,9 @@
+{
+    "name": "phone_native",
+    "version": "1.0.0",
+    "description": "Native phone skills via Termux:API — notifications, text-to-speech, clipboard, battery, location, flashlight, volume, wifi.",
+    "author": "Lyra",
+    "entry_point": "plugin.py",
+    "dependencies": ["termux-api"],
+    "config": {}
+}

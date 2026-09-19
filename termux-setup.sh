@@ -12,7 +12,7 @@ echo ""
 # 1. Core packages
 echo "▸ Installing core packages..."
 pkg update -y
-pkg install -y python git curl clang libjpeg-turbo zlib openssl
+pkg install -y python git curl clang libjpeg-turbo zlib openssl termux-api android-tools
 echo "✓ Core packages installed"
 
 # 2. TUR repo + Ollama
