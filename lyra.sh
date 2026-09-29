@@ -11,6 +11,12 @@ else
     CONFIG="config/config.yaml"
 fi
 
+# Use the project virtualenv if present (Arch/Omarchy blocks system-wide pip)
+PY="python"
+if [ -x ".venv/bin/python" ]; then
+    PY=".venv/bin/python"
+fi
+
 OLLAMA_URL="http://127.0.0.1:11434"
 SERVER_URL="http://127.0.0.1:8420/api/status"
 
@@ -49,7 +55,7 @@ start_server() {
     if server_up; then
         echo "✓ Lyra already running"
     else
-        nohup python run.py --config "$CONFIG" > server.log 2>&1 &
+        nohup "$PY" run.py --config "$CONFIG" > server.log 2>&1 &
         sleep 5
         if server_up; then
             echo "✓ Lyra command center started (log: server.log)"
@@ -99,7 +105,7 @@ case "${1:-start}" in
 
   chat)
     wakelock_on
-    python chat.py --config "$CONFIG"
+    "$PY" chat.py --config "$CONFIG"
     ;;
 
   status)
