@@ -112,6 +112,14 @@ The wireless-debugging port changes on reboot; re-run `adb connect` if tools rep
 
 ---
 
+## Setup notes (v2.1.1)
+
+- The Python deps step installs the **Rust toolchain** (~400 MB, one-time) because
+  FastAPI's pydantic-core has no prebuilt Android wheel — it compiles on your phone
+  the first time (5–15 min). Later runs skip it.
+- On Termux, never run `pip install --upgrade pip` — it corrupts the python-pip package.
+- Deps are intentionally unpinned: pinned versions may not compile on Termux Python 3.14.
+
 ## Lyra's skill set (v2.1)
 
 Lyra ships with three skill plugins (auto-loaded from `plugins/`):

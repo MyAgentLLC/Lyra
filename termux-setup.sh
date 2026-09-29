@@ -13,6 +13,9 @@ echo ""
 echo "▸ Installing core packages..."
 pkg update -y
 pkg install -y python git curl clang libjpeg-turbo zlib openssl termux-api android-tools
+# Rust toolchain: needed to compile pydantic-core (FastAPI dependency) on-device.
+# NOTE: ~400 MB download, one-time only.
+pkg install -y python-pip rust binutils build-essential
 echo "✓ Core packages installed"
 
 # 2. TUR repo + Ollama
@@ -43,10 +46,11 @@ ollama pull qwen2.5:1.5b || { echo "✗ Model pull failed — check connection";
 echo "✓ Model ready"
 
 # 5. Python dependencies (mobile set — no pyautogui/playwright/Pillow GUI deps)
-echo "▸ Installing Python dependencies..."
-pip install --upgrade pip
-pip install fastapi==0.115.0 uvicorn==0.30.0 ollama==0.3.3 pyyaml==6.0.2 \
-    websockets==12.0 aiohttp==3.10.0 pydantic==2.9.0 python-multipart==0.0.9 \
+# NOTE: On Termux NEVER run 'pip install --upgrade pip' — it breaks the python-pip package.
+# Unpinned on purpose: pinned versions may not compile on Termux's Python 3.14.
+# pydantic-core compiles with Rust on first run — this step takes 5-15 min.
+echo "▸ Installing Python dependencies (first run compiles pydantic with Rust: 5-15 min)..."
+pip install fastapi uvicorn ollama pyyaml websockets aiohttp pydantic python-multipart \
     --no-cache-dir
 echo "✓ Python dependencies installed"
 
