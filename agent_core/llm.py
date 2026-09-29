@@ -85,24 +85,42 @@ class LLMInterface:
         response = self.chat(messages, tools=tools)
         
         message = response.get("message", {}) if isinstance(response, dict) else response.message
-        
-        content = message.get("content", "") if isinstance(message, dict) else (message.content or "")
-        tool_calls_raw = message.get("tool_calls", []) if isinstance(message, dict) else getattr(message, 'tool_calls', [])
-        
+
+        # NOTE: qwen2.5 returns "tool_calls": null when it answers without calling
+        # any tool, and "arguments" can be null or a JSON string. Handle all of it.
+        if isinstance(message, dict):
+            content = message.get("content") or ""
+            tool_calls_raw = message.get("tool_calls") or []
+        else:
+            content = getattr(message, "content", None) or ""
+            tool_calls_raw = getattr(message, "tool_calls", None) or []
+
         tool_calls = []
         for tc in tool_calls_raw:
             if isinstance(tc, dict):
                 func = tc.get("function", {})
+                args = func.get("arguments")
+                if isinstance(args, str):
+                    try:
+                        args = json.loads(args) if args.strip() else {}
+                    except json.JSONDecodeError:
+                        args = {"_raw": args}
                 tool_calls.append({
                     "name": func.get("name", ""),
-                    "arguments": func.get("arguments", {}),
+                    "arguments": args or {},
                 })
             else:
                 func = getattr(tc, 'function', None)
                 if func:
+                    args = getattr(func, "arguments", None)
+                    if isinstance(args, str):
+                        try:
+                            args = json.loads(args) if args.strip() else {}
+                        except json.JSONDecodeError:
+                            args = {"_raw": args}
                     tool_calls.append({
-                        "name": func.name,
-                        "arguments": func.arguments if isinstance(func.arguments, dict) else json.loads(func.arguments),
+                        "name": getattr(func, "name", ""),
+                        "arguments": args if isinstance(args, dict) else {},
                     })
         
         return {

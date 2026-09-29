@@ -237,7 +237,7 @@ class Agent:
             return hint
 
         if isinstance(response, dict):
-            content = response.get("message", {}).get("content", "")
+            content = (response.get("message") or {}).get("content") or ""
         else:
             content = getattr(response.message, 'content', '') if hasattr(response, 'message') else str(response)
         if not content or not content.strip():
