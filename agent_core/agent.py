@@ -221,16 +221,28 @@ class Agent:
     def chat(self, message: str) -> str:
         """
         Simple chat without tool calling — for direct conversation.
+        Returns a clear error string instead of crashing if Ollama is down.
         """
         self.memory.add_message("user", message)
         messages = self.memory.get_messages_for_context()
-        response = self.llm.chat(messages)
-        
+
+        try:
+            response = self.llm.chat(messages)
+        except Exception as e:
+            logger.error(f"Chat failed (Ollama unreachable?): {e}")
+            hint = ("I can't reach my language model. If this happened after switching "
+                    "apps, Android likely killed the Ollama server in the background. "
+                    "Run 'bash lyra.sh restart' and try again.")
+            self.memory.add_message("assistant", hint)
+            return hint
+
         if isinstance(response, dict):
             content = response.get("message", {}).get("content", "")
         else:
             content = getattr(response.message, 'content', '') if hasattr(response, 'message') else str(response)
-        
+        if not content or not content.strip():
+            content = "(I generated an empty response — try rephrasing.)"
+
         self.memory.add_message("assistant", content)
         return content
 

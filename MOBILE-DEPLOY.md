@@ -112,6 +112,47 @@ The wireless-debugging port changes on reboot; re-run `adb connect` if tools rep
 
 ---
 
+## Keeping Lyra alive + chatting without a browser (v2.2)
+
+### Why the connection dies when you switch apps
+Android kills background processes aggressively — that takes down the Ollama server
+and/or the command center, and the browser page loses connection. Three settings fix it:
+
+1. **Wake lock** — `bash lyra.sh start` acquires it automatically (`termux-wake-lock`).
+2. **Battery optimization** — Android Settings → Apps → Termux → Battery → **Unrestricted**.
+   On Samsung also: Settings → Battery → Background usage limits → make sure Termux is
+   never put to sleep, and turn off "Remove permissions if app unused" for Termux.
+3. **Phantom process killer** (Android 12+; needed when Ollama still dies in background):
+   - Enable Developer options → Wireless debugging (phone Settings)
+   - In Termux:
+     ```
+     adb start-server
+     ```
+   - Pair once from the wireless-debugging screen (`adb pair ip:port` with the pairing code),
+     then connect (`adb connect ip:port`), then run:
+     ```
+     adb shell device_config put activity_manager max_phantom_processes 2147483647
+     ```
+   - This tells Android to stop killing Termux child processes in the background. Reboot-safe
+     on most builds; if Ollama dies again after a phone reboot, rerun that one command.
+
+### Talking to Lyra without the browser
+- **Terminal chat** — `bash lyra.sh chat` (or `python chat.py`): full agent with tools,
+  right in Termux. Commands inside: /help /tools /status /reset /exit.
+- **Command center** — `bash lyra.sh start`, then http://127.0.0.1:8420 in Chrome.
+
+### lyra.sh — one command for everything
+| Command | What it does |
+|---|---|
+| `bash lyra.sh start` | wake lock + starts Ollama + command center (both stay running) |
+| `bash lyra.sh stop` | stops both, releases wake lock |
+| `bash lyra.sh restart` | one-command recovery after Android killed things |
+| `bash lyra.sh chat` | terminal chat with Lyra (tools included) |
+| `bash lyra.sh status` | shows whether Ollama / command center are up |
+| `bash lyra.sh log` | follow the server log |
+
+If she ever "stops responding": `bash lyra.sh restart` — that's it.
+
 ## Setup notes (v2.1.1)
 
 - The Python deps step installs the **Rust toolchain** (~400 MB, one-time) because

@@ -138,7 +138,10 @@ def create_app(agent, tools_registry, memory, config: dict,
     
     @app.post("/api/chat")
     async def chat(request: ChatRequest):
-        response = agent.chat(request.message)
+        try:
+            response = agent.chat(request.message)
+        except Exception as e:
+            return {"response": f"Agent error: {e}", "error": True}
         await emit_log("chat", {"user": request.message, "assistant": response})
         return {"response": response}
     
