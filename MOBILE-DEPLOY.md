@@ -70,6 +70,24 @@ http://127.0.0.1:8420
 
 You now have the full Lyra dashboard running locally.
 
+> **The dashboard is locked.** The first time you open it you'll land on a
+> sign-in page asking for your dashboard token.
+>
+> - **First run:** Lyra auto-generates a strong token and saves it to
+>   `~/Lyra/data/.api_token` (readable only by you, never committed to git).
+>   Open that file, copy the token, paste it on the sign-in page. Your browser
+>   stays signed in for 30 days.
+> - **Your own token:** set `LYRA_API_TOKEN` before starting, or uncomment
+>   `api_token:` under `server:` in `config/config.mobile.yaml`.
+> - **Scripts/API:** send `Authorization: Bearer <token>` or append
+>   `?token=<token>` — e.g. `curl -H "Authorization: Bearer $TOKEN"
+>   http://127.0.0.1:8420/api/status`.
+> - **Forgot it?** Delete `~/Lyra/data/.api_token` and restart — a fresh token
+>   is generated.
+>
+> Incoming webhooks (`/webhook/<name>`) stay reachable without the dashboard
+> token — they use their own per-webhook secrets.
+
 ---
 
 ## Day-to-day usage

@@ -35,6 +35,10 @@ server:
   # localhost only — access the command center from the phone's own browser
   host: "127.0.0.1"
   port: 8420
+  # Dashboard login token. Recommended: leave unset — Lyra auto-generates a
+  # strong token on first run and saves it to data/.api_token (never committed).
+  # Or set your own here, or via the LYRA_API_TOKEN environment variable.
+  # api_token: "put-a-long-random-string-here"
 
 safety:
   require_confirmation:

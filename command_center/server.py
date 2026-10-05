@@ -11,9 +11,21 @@ from pathlib import Path
 from typing import Optional
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, UploadFile, File, Request
-from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
+from fastapi.responses import HTMLResponse, FileResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
+
+from command_center.auth import (
+    AuthMiddleware,
+    COOKIE_NAME,
+    SESSION_TTL_SECONDS,
+    is_authenticated,
+    login_page_html,
+    make_session_cookie,
+    resolve_api_token,
+    safe_next,
+    verify_token,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -51,6 +63,44 @@ def create_app(agent, tools_registry, memory, config: dict,
     """Create and configure the FastAPI app."""
     
     app = FastAPI(title="Autonomous Agent Command Center")
+
+    # === Authentication ===
+    # Token sources (in order): LYRA_API_TOKEN env var, server.api_token in
+    # config, or an auto-generated token persisted at data/.api_token.
+    # Everything below is gated by AuthMiddleware except /login, /static/*,
+    # and /webhook/* (incoming webhooks use their own per-webhook secrets).
+    project_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    api_token = resolve_api_token(config, project_dir)
+    app.add_middleware(AuthMiddleware, token=api_token)
+    logger.info("Command center authentication enabled (token required)")
+
+    @app.get("/login", response_class=HTMLResponse)
+    async def login_form(request: Request):
+        if is_authenticated(request.scope, api_token):
+            return RedirectResponse("/", status_code=302)
+        return HTMLResponse(
+            login_page_html(request.query_params.get("next", "/"), error=False)
+        )
+
+    @app.post("/login")
+    async def login_submit(request: Request):
+        form = await request.form()
+        submitted = str(form.get("token", ""))
+        next_url = str(form.get("next", "/"))
+        if verify_token(submitted, api_token):
+            response = RedirectResponse(safe_next(next_url), status_code=302)
+            response.set_cookie(
+                COOKIE_NAME,
+                make_session_cookie(api_token),
+                httponly=True,
+                samesite="strict",
+                path="/",
+                max_age=SESSION_TTL_SECONDS,
+            )
+            logger.info("Command center login successful")
+            return response
+        logger.warning("Command center login failed (bad token)")
+        return HTMLResponse(login_page_html(next_url, error=True), status_code=401)
     
     static_dir = Path(__file__).parent / "static"
     app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
