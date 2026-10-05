@@ -1,3 +1,7 @@
+> **RETIRED — 2026-10-05.** Lyra has been superseded by **Nova** (the active AI agent). This repository is preserved as-is for history and is no longer maintained. The laptop itself keeps the name Lyra; only this codebase is retired.
+
+---
+
 # Lyra — Autonomous Local Agent v2.0
 
 A fully autonomous, locally-run AI agent that controls your computer, phone, browser, and filesystem. Uses local LLMs via Ollama. 100% free, 100% private — everything runs on your machine.
